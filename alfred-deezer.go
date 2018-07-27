@@ -10,7 +10,9 @@ import (
 	resty "gopkg.in/resty.v1"
 )
 
-type Track struct {
+// TrackResult represents a result of a Deezer track query
+type TrackResult struct {
+	// Inspired by https://medium.com/@IndianGuru/consuming-json-apis-with-go-d711efc1dcf9
 	Data []struct {
 		ID             int    `json:"id"`
 		Readable       bool   `json:"readable"`
@@ -67,7 +69,7 @@ func main() {
 	wf.Run(run)
 }
 
-func queryDeezer(query string) Track {
+func queryDeezerTracks(query string) TrackResult {
 	// https://api.deezer.com/search/track?q="$query"&limit=1&order=RANKING_DESC"
 	resp, err := resty.R().
 		SetQueryParams(map[string]string{
@@ -80,7 +82,7 @@ func queryDeezer(query string) Track {
 	if err == nil {
 	}
 
-	var track Track
+	var track TrackResult
 	if err := json.NewDecoder(strings.NewReader(resp.String())).Decode(&track); err != nil {
 		// log.Println(err)
 	}
@@ -89,8 +91,26 @@ func queryDeezer(query string) Track {
 }
 
 func run() {
-	title := os.Args[1]
-	tracks := queryDeezer(title)
+	contentType := os.Args[1]
+	title := os.Args[2]
+
+	switch contentType {
+	case "track":
+		runTracks(title)
+	case "album":
+		runAlbum(title)
+	case "artist":
+		runArtist(title)
+	}
+
+}
+
+func runAlbum(title string)  {}
+func runArtist(title string) {}
+
+func runTracks(title string) {
+
+	tracks := queryDeezerTracks(title)
 
 	for _, track := range tracks.Data {
 		var icon aw.Icon
@@ -102,7 +122,7 @@ func run() {
 		wf.NewItem(track.Artist.Name + " -  " + track.Title).
 			Subtitle(track.Album.Title).
 			Valid(true).
-			Icon(&icon).
+			// Icon(&icon).
 			Arg(id).
 			Quicklook(url).
 			UID("track" + id)
