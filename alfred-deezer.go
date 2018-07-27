@@ -53,6 +53,40 @@ type TrackResult struct {
 	Next  string `json:"next"`
 }
 
+// AlbumResults represents a result of a Deezer album query
+type AlbumResult struct {
+	Data []struct {
+		ID             int    `json:"id"`
+		Title          string `json:"title"`
+		Link           string `json:"link"`
+		Cover          string `json:"cover"`
+		CoverSmall     string `json:"cover_small"`
+		CoverMedium    string `json:"cover_medium"`
+		CoverBig       string `json:"cover_big"`
+		CoverXl        string `json:"cover_xl"`
+		GenreID        int    `json:"genre_id"`
+		NbTracks       int    `json:"nb_tracks"`
+		RecordType     string `json:"record_type"`
+		Tracklist      string `json:"tracklist"`
+		ExplicitLyrics bool   `json:"explicit_lyrics"`
+		Artist         struct {
+			ID            int    `json:"id"`
+			Name          string `json:"name"`
+			Link          string `json:"link"`
+			Picture       string `json:"picture"`
+			PictureSmall  string `json:"picture_small"`
+			PictureMedium string `json:"picture_medium"`
+			PictureBig    string `json:"picture_big"`
+			PictureXl     string `json:"picture_xl"`
+			Tracklist     string `json:"tracklist"`
+			Type          string `json:"type"`
+		} `json:"artist"`
+		Type string `json:"type"`
+	} `json:"data"`
+	Total int    `json:"total"`
+	Next  string `json:"next"`
+}
+
 // aw.Workflow is the main API
 var wf *aw.Workflow
 
@@ -69,7 +103,7 @@ func main() {
 	wf.Run(run)
 }
 
-func queryDeezerTracks(query string) TrackResult {
+func queryDeezer(query string, resource string) string {
 	// https://api.deezer.com/search/track?q="$query"&limit=1&order=RANKING_DESC"
 	resp, err := resty.R().
 		SetQueryParams(map[string]string{
@@ -77,17 +111,12 @@ func queryDeezerTracks(query string) TrackResult {
 			"limit": "10",
 			"order": "RANKING_DESC",
 		}).
-		Get("https://api.deezer.com/search/track")
+		Get("https://api.deezer.com/search/" + resource)
 
 	if err == nil {
 	}
 
-	var track TrackResult
-	if err := json.NewDecoder(strings.NewReader(resp.String())).Decode(&track); err != nil {
-		// log.Println(err)
-	}
-
-	return track
+	return resp.String()
 }
 
 func run() {
@@ -105,12 +134,43 @@ func run() {
 
 }
 
-func runAlbum(title string)  {}
+func runAlbum(title string) {
+	response := queryDeezer(title, "album")
+
+	var albums AlbumResult
+	if err := json.NewDecoder(strings.NewReader(response)).Decode(&albums); err != nil {
+		// log.Println(err)
+	}
+
+	for _, album := range albums.Data {
+		var icon aw.Icon
+		icon.Value = album.CoverSmall
+
+		id := strconv.Itoa(album.ID)
+		url := "https://www.deezer.com/en/album/" + id
+
+		wf.NewItem(album.Artist.Name + " - " + album.Title).
+			// Subtitle(album.Album.Title).
+			Valid(true).
+			// Icon(&icon).
+			Arg(id).
+			Quicklook(url).
+			UID("album" + id)
+	}
+
+	// And send the results to Alfred
+	wf.SendFeedback()
+}
 func runArtist(title string) {}
 
 func runTracks(title string) {
 
-	tracks := queryDeezerTracks(title)
+	response := queryDeezer(title, "track")
+
+	var tracks TrackResult
+	if err := json.NewDecoder(strings.NewReader(response)).Decode(&tracks); err != nil {
+		// log.Println(err)
+	}
 
 	for _, track := range tracks.Data {
 		var icon aw.Icon
