@@ -153,7 +153,7 @@ func runAlbum(title string) {
 			// Subtitle(album.Album.Title).
 			Valid(true).
 			// Icon(&icon).
-			Arg(id).
+			Arg(url).
 			Quicklook(url).
 			UID("album" + id)
 	}
@@ -183,7 +183,7 @@ func runTracks(title string) {
 			Subtitle(track.Album.Title).
 			Valid(true).
 			// Icon(&icon).
-			Arg(id).
+			Arg(url).
 			Quicklook(url).
 			UID("track" + id)
 	}
