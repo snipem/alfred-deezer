@@ -53,7 +53,7 @@ type TrackResult struct {
 	Next  string `json:"next"`
 }
 
-// AlbumResults represents a result of a Deezer album query
+// AlbumResult represents a result of a Deezer album query
 type AlbumResult struct {
 	Data []struct {
 		ID             int    `json:"id"`
