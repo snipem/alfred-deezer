@@ -1,5 +1,7 @@
 package main
 
+// run: alfred_workflow_data=workflow alfred_workflow_cache=/tmp/alfred alfred_workflow_bundleid=mk_testing go run alfred-deezer.go track mötley
+
 import (
 	"encoding/json"
 	"os"
@@ -134,6 +136,10 @@ func run() {
 
 }
 
+func getLocalURL(url string) string {
+	return strings.Replace(url, "https://", "deezer://", -1)
+}
+
 func runAlbum(title string) {
 	response := queryDeezer(title, "album")
 
@@ -155,13 +161,18 @@ func runAlbum(title string) {
 			// Icon(&icon).
 			Arg(url).
 			Quicklook(url).
-			UID("album" + id)
+			UID("album" + id).
+			NewModifier("cmd").
+			Subtitle("Open in Deezer App").
+			Arg(getLocalURL(url))
 	}
 
 	// And send the results to Alfred
 	wf.SendFeedback()
 }
-func runArtist(title string) {}
+func runArtist(title string) {
+	// TODO implement me
+}
 
 func runTracks(title string) {
 
@@ -185,7 +196,10 @@ func runTracks(title string) {
 			// Icon(&icon).
 			Arg(url).
 			Quicklook(url).
-			UID("track" + id)
+			UID("track" + id).
+			NewModifier("cmd").
+			Subtitle("Open in Deezer App").
+			Arg(getLocalURL(url))
 	}
 
 	// And send the results to Alfred
