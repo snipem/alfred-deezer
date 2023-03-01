@@ -89,6 +89,27 @@ type AlbumResult struct {
 	Next  string `json:"next"`
 }
 
+type ArtistResult struct {
+	Data []struct {
+		ID             int    `json:"id"`
+		Name           string `json:"name"`
+		Link           string `json:"link"`
+		Picture        string `json:"picture"`
+		PictureSmall   string `json:"picture_small"`
+		PictureMedium  string `json:"picture_medium"`
+		PictureBig     string `json:"picture_big"`
+		PictureXl      string `json:"picture_xl"`
+		NbAlbum        int    `json:"nb_album"`
+		NbFan          int    `json:"nb_fan"`
+		Radio          bool   `json:"radio"`
+		Tracklist      string `json:"tracklist"`
+		ExplicitLyrics bool   `json:"explicit_lyrics"`
+		Type           string `json:"type"`
+	} `json:"data"`
+	Total int    `json:"total"`
+	Next  string `json:"next"`
+}
+
 // aw.Workflow is the main API
 var wf *aw.Workflow
 
@@ -171,7 +192,34 @@ func runAlbum(title string) {
 	wf.SendFeedback()
 }
 func runArtist(title string) {
-	// TODO implement me
+	response := queryDeezer(title, "artist")
+
+	var artist ArtistResult
+	if err := json.NewDecoder(strings.NewReader(response)).Decode(&artist); err != nil {
+		// log.Println(err)
+	}
+
+	for _, artist := range artist.Data {
+		var icon aw.Icon
+		icon.Value = artist.Picture
+
+		id := strconv.Itoa(artist.ID)
+		url := "https://www.deezer.com/en/artist/" + id
+
+		wf.NewItem(artist.Name).
+			// Subtitle(album.Album.Title).
+			Valid(true).
+			// Icon(&icon).
+			Arg(url).
+			Quicklook(url).
+			UID("album" + id).
+			NewModifier("cmd").
+			Subtitle("Open in Deezer App").
+			Arg(getLocalURL(url))
+	}
+
+	// And send the results to Alfred
+	wf.SendFeedback()
 }
 
 func runTracks(title string) {
